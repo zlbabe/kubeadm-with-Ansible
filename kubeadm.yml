@@ -1,0 +1,8 @@
+---
+
+- name: Install k8s cluster with kubeadm
+  hosts: all
+  remote_user: ubuntu
+  become: yes
+  roles:
+    - kubeadm

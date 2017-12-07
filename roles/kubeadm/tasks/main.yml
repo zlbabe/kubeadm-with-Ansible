@@ -1,0 +1,46 @@
+---
+
+- name: Add k8s repo key
+  apt_key:
+    url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+    state: present
+
+- name: Add k8s repo
+  apt_repository:
+     repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+     state: present
+     update_cache: yes
+
+- name: Install k8s components
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - kubeadm
+    - kubectl
+    - kubelet
+
+- name: Check if k8s cluster is running
+  shell: "KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | awk 'NR>1 {print $2}' | uniq"
+  when: "'master' in group_names "
+  register: k8s_running
+
+- name: Initialize the master
+  shell: "kubeadm init --apiserver-advertise-address={{ inventory_hostname }} --pod-network-cidr=10.244.0.0/16"
+  register: kubeadm_init
+  when:
+    - "'master' in group_names "
+    - k8s_running.stdout_lines != ["Ready"]
+
+- name: Install Flannel
+  shell: "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"
+  when:
+    - "'master' in group_names "
+    - k8s_running.stdout_lines != ["Ready"]
+
+- name: Join the workers
+  shell: "{{ hostvars[groups['master'][0]].kubeadm_init.stdout_lines | join('|') | regex_search('(kubeadm join --token.*)') }}"
+  when: 
+    - "'workers' in group_names "
+    - hostvars[groups['master'][0]].k8s_running.stdout_lines != ["Ready"]
+
