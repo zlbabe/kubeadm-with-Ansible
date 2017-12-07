@@ -26,21 +26,28 @@
   register: k8s_running
 
 - name: Initialize the master
-  shell: "kubeadm init --apiserver-advertise-address={{ inventory_hostname }} --pod-network-cidr=10.244.0.0/16"
+  shell: "kubeadm init --apiserver-advertise-address={{ inventory_hostname }} --pod-network-cidr={{ POD_CIDR }}"
   register: kubeadm_init
   when:
     - "'master' in group_names "
     - k8s_running.stdout_lines != ["Ready"]
 
-- name: Install Flannel
-  shell: "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml"
+- name: Install Flannel network add-on
+  shell: "wget https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml -O /tmp/flannel.yaml && sed -i 's@10.244.0.0/16@{{ POD_CIDR }}@' /tmp/flannel.yaml &&  KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f /tmp/flannel.yaml"
   when:
     - "'master' in group_names "
     - k8s_running.stdout_lines != ["Ready"]
+    - flannel
+
+- name: Install Calico network add-on
+  shell: "wget https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml -O /tmp/calico.yaml && sed -i 's@192.168.0.0/16@{{ POD_CIDR }}@'  /tmp/calico.yaml && KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f  /tmp/calico.yaml"
+  when:
+    - "'master' in group_names "
+    - k8s_running.stdout_lines != ["Ready"]
+    - calico
 
 - name: Join the workers
   shell: "{{ hostvars[groups['master'][0]].kubeadm_init.stdout_lines | join('|') | regex_search('(kubeadm join --token.*)') }}"
   when: 
     - "'workers' in group_names "
     - hostvars[groups['master'][0]].k8s_running.stdout_lines != ["Ready"]
-
