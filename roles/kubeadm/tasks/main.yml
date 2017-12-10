@@ -46,6 +46,13 @@
     - k8s_running.stdout_lines != ["Ready"]
     - calico
 
+- name: Install Weavenet network add-on
+  shell: "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl version | base64 | tr -d '\n')"
+  when:
+    - "'master' in group_names "
+    - k8s_running.stdout_lines != ["Ready"]
+    - weave
+
 - name: Join the workers
   shell: "{{ hostvars[groups['master'][0]].kubeadm_init.stdout_lines | join('|') | regex_search('(kubeadm join --token.*)') }}"
   when: 

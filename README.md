@@ -24,12 +24,13 @@ The main configuration file: `roles/kubeadm/defaults/main.yml`
 * pod cidr is defined by the variable `POD_CIDR`
 * To use Flannel `flannel: true`
 * To use Calico `calico: true`
+* To use Weavenet `weave: true`
 
 >Note:  only one network add-on can be used.
 
 ## Roadmap
 - [x] Support Calico network add-on
-- [ ] Support Weave network add-on
+- [x] Support Weave network add-on
 - [ ] End-to-end tests
 
 ## License
