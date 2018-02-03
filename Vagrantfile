@@ -4,6 +4,7 @@
 Vagrant.configure("2") do |config|
 
   config.vm.box = "ubuntu/xenial64"
+  config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
     vb.memory = "512"
@@ -27,6 +28,6 @@ Vagrant.configure("2") do |config|
   	worker2.vm.network "private_network", ip: "10.0.0.102"
   end
   
-  config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/ubuntu/.ssh/authorized_keys"
+  config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/vagrant/.ssh/authorized_keys"
 
 end
