@@ -17,8 +17,13 @@
     state: latest
   with_items:
     - kubeadm
-    - kubectl
     - kubelet
+
+- name: Install kubectl on master
+  apt:
+    name: kubectl
+    state: latest
+  when: inventory_hostname in groups['master']
 
 - name: Check if k8s cluster is running
   shell: "KUBECONFIG=/etc/kubernetes/admin.conf kubectl get nodes | awk 'NR>1 {print $2}' | uniq"
